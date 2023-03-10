@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  username String
+  password String
+}
+
+model DeadPeople {
+  id         Int       @id @default(autoincrement())
+  fullname   String    @unique
+  photo      String
+  age        Int
+  candles    Int       @default(0)
+  birthday   DateTime
+  birthplace String
+  deadDay    DateTime
+  deadPlace  String
+  career     String?
+  death      String?
+  reason     String?
+  netWorth   String?
+  facebook   String?
+  twitter    String?
+  instagram  String?
+  youtube    String?
+  urlname    String    @unique @default("")
+  Comment    Comment[]
+}
+
+model Article {
+  id           Int       @id @default(autoincrement())
+  title        String
+  photo        String
+  description  String
+  published_at DateTime?
+  hashtags     String?
+  username     String
+  Comment      Comment[]
+}
+
+model Comment {
+  id           Int         @id @default(autoincrement())
+  content      String
+  username     String
+  articleId    Int?
+  deadPeopleId Int?
+  article      Article?    @relation(fields: [articleId], references: [id])
+  deadPeople   DeadPeople? @relation(fields: [deadPeopleId], references: [id])
+}

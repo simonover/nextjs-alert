@@ -1,0 +1,45 @@
+{
+  "name": "whohasdied-express",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:build dev:*",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveagile/whohasdied-express.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/loveagile/whohasdied-express/issues"
+  },
+  "homepage": "https://github.com/loveagile/whohasdied-express#readme",
+  "dependencies": {
+    "@google-cloud/storage": "^6.7.0",
+    "@prisma/client": "^4.6.0",
+    "app-root-path": "^3.1.0",
+    "body-parser": "^1.20.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "formidable": "^2.0.1",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^8.5.1",
+    "nodemon": "^2.0.20",
+    "npm-run-all": "^4.1.5",
+    "path": "^0.12.7",
+    "react-helmet": "^6.1.0"
+  },
+  "type": "module",
+  "devDependencies": {
+    "prerender-node": "^3.5.0",
+    "react-dom": "^18.2.0"
+  }
+}
