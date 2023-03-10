@@ -2,6 +2,7 @@ import express from 'express'
 
 import {
   addDeadPerson,
+  getDeadPeople,
   getAllDeadPeople,
   getDeadPerson,
   updateDeadPerson,
@@ -11,7 +12,8 @@ import { checkAdmin } from '../middlewares/auth.js'
 
 const router = express.Router()
 
-router.get('/', getAllDeadPeople)
+router.get('/', getDeadPeople)
+router.get('/all', getAllDeadPeople)
 router.get('/:urlname', getDeadPerson)
 router.post('/', checkAdmin, addDeadPerson)
 router.put('/:urlname', checkAdmin, updateDeadPerson)

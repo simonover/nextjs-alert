@@ -4,12 +4,27 @@ import fs from 'fs'
 import path from 'path'
 import { Storage } from '@google-cloud/storage'
 import { format } from 'util'
+import * as dotenv from 'dotenv'
 
-import config from '../config/index.js'
-
+dotenv.config()
 const prisma = new PrismaClient()
 
 export const getAllDeadPeople = async (req, res, next) => {
+  try {
+    const people = await prisma.deadPeople.findMany({
+      orderBy: {
+        deadDay: 'desc',
+      },
+    })
+    const total = await prisma.deadPeople.count()
+
+    return res.status(200).send({ people, total })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getDeadPeople = async (req, res, next) => {
   try {
     const key = req.query?.search || ''
     const page = Number(req.query?.page) || 1,
@@ -107,10 +122,10 @@ export const addDeadPerson = async (req, res, next) => {
 
     form.parse(req, async (err, fields, files) => {
       const cloudStorage = new Storage({
-        keyFilename: path.resolve(config.STORAGE_CONFIG_FILENAME),
-        projectId: config.PROJECT_ID,
+        keyFilename: path.resolve(process.env.STORAGE_CONFIG_FILENAME),
+        projectId: process.env.PROJECT_ID,
       })
-      const bucketName = config.BUCKET_NAME
+      const bucketName = process.env.BUCKET_NAME
       const bucket = cloudStorage.bucket(bucketName)
 
       person = { ...fields }
@@ -134,7 +149,7 @@ export const addDeadPerson = async (req, res, next) => {
       })
       blobStream.on('finish', async () => {
         const publicUrl = format(
-          `${config.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
+          `${process.env.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
         )
         try {
           const newPerson = await prisma.deadPeople.create({
@@ -159,18 +174,18 @@ export const updateDeadPerson = async (req, res, next) => {
     let file
     form.parse(req, async (err, fields, files) => {
       const cloudStorage = new Storage({
-        keyFilename: path.resolve(config.STORAGE_CONFIG_FILENAME),
-        projectId: config.PROJECT_ID,
+        keyFilename: path.resolve(process.env.STORAGE_CONFIG_FILENAME),
+        projectId: process.env.PROJECT_ID,
       })
-      const bucketName = config.BUCKET_NAME
+      const bucketName = process.env.BUCKET_NAME
       const bucket = cloudStorage.bucket(bucketName)
 
       const data = { ...fields }
-      if (data.fullname)
+      if (data?.fullname)
         data.urlname = fields.fullname.split(' ').join('').toLowerCase()
-      if (data.age) data.age = Number(data.age)
-      if (data.birthday) data.birthday = new Date(data.birthday)
-      if (data.deadDay) data.deadDay = new Date(data.deadDay)
+      if (data?.age) data.age = Number(data?.age)
+      if (data?.birthday) data.birthday = new Date(data?.birthday)
+      if (data?.deadDay) data.deadDay = new Date(data?.deadDay)
 
       const { photo } = files
       if (!photo) {
@@ -198,7 +213,7 @@ export const updateDeadPerson = async (req, res, next) => {
       })
       blobStream.on('finish', async () => {
         const publicUrl = format(
-          `${config.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
+          `${process.env.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
         )
         try {
           const updatedPerson = await prisma.deadPeople.update({
@@ -207,7 +222,7 @@ export const updateDeadPerson = async (req, res, next) => {
             },
             data: { ...data, photo: publicUrl },
           })
-          return res.status(201).json({ person: updatedPerson })
+          return res.status(200).json({ person: updatedPerson })
         } catch (error) {
           next(error)
         }

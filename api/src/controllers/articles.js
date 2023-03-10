@@ -4,12 +4,26 @@ import fs from 'fs'
 import path from 'path'
 import { Storage } from '@google-cloud/storage'
 import { format } from 'util'
+import * as dotenv from 'dotenv'
 
-import config from '../config/index.js'
-
+dotenv.config()
 const prisma = new PrismaClient()
 
 export const getAllArticles = async (req, res, next) => {
+  try {
+    const articles = await prisma.article.findMany({
+      orderBy: {
+        published_at: 'desc',
+      },
+    })
+    const total = await prisma.article.count()
+    return res.status(200).json({ articles, total })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getArticles = async (req, res, next) => {
   try {
     const key = req.query?.search || ''
     const page = Number(req.query?.page) || 1,
@@ -76,16 +90,17 @@ export const addArticle = async (req, res, next) => {
 
     form.parse(req, async (err, fields, files) => {
       const cloudStorage = new Storage({
-        keyFilename: path.resolve(config.STORAGE_CONFIG_FILENAME),
-        projectId: config.PROJECT_ID,
+        keyFilename: path.resolve(process.env.STORAGE_CONFIG_FILENAME),
+        projectId: process.env.PROJECT_ID,
       })
-      const bucketName = config.BUCKET_NAME
+      const bucketName = process.env.BUCKET_NAME
       const bucket = cloudStorage.bucket(bucketName)
 
       article = { ...fields }
-      let tags = ''
-      if (Array.isArray(article.hashtags)) {
-        const array = article.hashtags
+      let tags = '',
+        hashtags = JSON.parse(article.hashtags)
+      if (Array.isArray(hashtags)) {
+        const array = hashtags
         const length = array.length
         array.map((hash, index) => {
           tags += hash
@@ -110,7 +125,7 @@ export const addArticle = async (req, res, next) => {
       })
       blobStream.on('finish', async () => {
         const publicUrl = format(
-          `${config.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
+          `${process.env.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
         )
         try {
           const newArticle = await prisma.article.create({
@@ -135,13 +150,6 @@ export const editArticle = async (req, res, next) => {
     let data
 
     form.parse(req, async (err, fields, files) => {
-      const cloudStorage = new Storage({
-        keyFilename: path.resolve(config.STORAGE_CONFIG_FILENAME),
-        projectId: config.PROJECT_ID,
-      })
-      const bucketName = config.BUCKET_NAME
-      const bucket = cloudStorage.bucket(bucketName)
-
       data = { ...fields }
       let tags = ''
       if (Array.isArray(data.hashtags)) {
@@ -156,14 +164,25 @@ export const editArticle = async (req, res, next) => {
       if (data.published_at) data.published_at = new Date(published_at)
       const { photo } = files
       if (!photo) {
-        const updatedArticle = await prisma.article.update({
-          where: {
-            id: id,
-          },
-          data: data,
-        })
-        return res.status(200).send({ article: updatedArticle })
+        try {
+          const updatedArticle = await prisma.article.update({
+            where: {
+              id: id,
+            },
+            data: data,
+          })
+          return res.status(200).send({ article: updatedArticle })
+        } catch (err) {
+          return res.status(400).json(err)
+        }
       }
+      const cloudStorage = new Storage({
+        keyFilename: path.resolve(process.env.STORAGE_CONFIG_FILENAME),
+        projectId: process.env.PROJECT_ID,
+      })
+      const bucketName = process.env.BUCKET_NAME
+      const bucket = cloudStorage.bucket(bucketName)
+
       var oldPath = photo.filepath
       file = '/uploads/' + photo.originalFilename
       var rawData = fs.readFileSync(oldPath)
@@ -175,7 +194,7 @@ export const editArticle = async (req, res, next) => {
       })
       blobStream.on('finish', async () => {
         const publicUrl = format(
-          `${config.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
+          `${process.env.GOOGLE_CLOUD_STORE}${bucket.name}/${blob.name}`
         )
         try {
           const updatedArticle = await prisma.article.update({

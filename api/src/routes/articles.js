@@ -5,13 +5,15 @@ import {
   deleteArticle,
   editArticle,
   getAllArticles,
+  getArticles,
   getArticle,
 } from '../controllers/articles.js'
 import { checkAdmin } from '../middlewares/auth.js'
 
 const router = express.Router()
 
-router.get('/', getAllArticles)
+router.get('/', getArticles)
+router.get('/all', getAllArticles)
 router.get('/:id', getArticle)
 router.post('/', checkAdmin, addArticle)
 router.put('/:id', checkAdmin, editArticle)
